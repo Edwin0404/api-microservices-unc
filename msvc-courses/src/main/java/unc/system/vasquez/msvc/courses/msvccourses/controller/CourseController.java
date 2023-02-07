@@ -72,6 +72,8 @@ public class CourseController {
         }
         if (optional.isPresent())
             return ResponseEntity.status(HttpStatus.CREATED).body(optional.get());
+        if (optional.isEmpty())
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(Collections.singletonMap("Mensaje", "Usiario ya reguistrado en el curso"));
         return ResponseEntity.notFound().build();
     }
     @PostMapping("/create-user/{idCourse}")
@@ -97,6 +99,19 @@ public class CourseController {
         if (optional.isPresent())
             return ResponseEntity.status(HttpStatus.OK).body(optional.get());
         return ResponseEntity.notFound().build();
+    }
+    @GetMapping("/users/{id}")
+    public ResponseEntity<?> detailUsers(@PathVariable Long id){
+        Optional<Course> optional = courseService.usersById(id);
+        if(optional.isPresent()){
+            return ResponseEntity.ok(optional.get());
+        }
+        return ResponseEntity.notFound().build();
+    }
+    @DeleteMapping("/delete-course-user/{id}")
+    public ResponseEntity<?> deleteCourseUserById(@PathVariable Long id){
+        courseService.deleteCourseUserById(id);
+        return ResponseEntity.noContent().build();
     }
 
     private static  ResponseEntity<Map<String, String>> validate(BindingResult result) {

@@ -65,6 +65,10 @@ public class UserController {
         } else
             return ResponseEntity.notFound().build();
     }
+    @GetMapping("/users-by-course")
+    public ResponseEntity<?> usersByCourse(@RequestParam List<Long> ids){
+        return ResponseEntity.ok(userService.listById(ids));
+    }
 
     //FUNCIONES PRIVADAS
     private static ResponseEntity<Map<String, String>> validate(BindingResult result) {

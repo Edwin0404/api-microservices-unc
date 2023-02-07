@@ -8,9 +8,24 @@ public class CourseUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "id_user", unique = true)
+    @Column(name = "id_user")
     private Long idUser;
+    @Column(name = "id_course")
+    private Long idCourse;
 
+    public CourseUser(Long idCourse, Long idUser) {
+        this.idCourse = idCourse;
+        this.idUser = idUser;
+    }
+    public CourseUser() {
+    }
+
+    public Long getIdCourse() {
+        return idCourse;
+    }
+    public void setIdCourse(Long idCourse) {
+        this.idCourse = idCourse;
+    }
     public Long getId() {
         return id;
     }

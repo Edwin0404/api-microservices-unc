@@ -10,13 +10,17 @@ import unc.system.vasquez.msvc.courses.msvccourses.model.entity.CourseUser;
 import unc.system.vasquez.msvc.courses.msvccourses.repository.CourseRepository;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CourseServiceImpl implements CourseService{
 
     @Autowired //Permite jalar elementos de otro espacio para trabajar con sus metodos aqui
     private CourseRepository courseRepository;
+    @Autowired //Permite jalar elementos de otro espacio para trabajar con sus metodos aqui
+    private CourseUserService courseUserService;
     @Autowired
     private UserClientRest userClientRest;
 
@@ -49,8 +53,14 @@ public class CourseServiceImpl implements CourseService{
             User userBD = userClientRest.detail(user.getId());
 
             Course course = optional.get();
-            CourseUser courseUser = new CourseUser();
-            courseUser.setIdUser(userBD.getId());
+            /*CourseUser courseUser = new CourseUser();
+            courseUser.setIdUser(userBD.getId());*/
+            for (CourseUser value : courseUserService.getAll()) {
+                if (value.getIdUser() == userBD.getId() && Objects.equals(value.getIdCourse(), course.getId())) {
+                    return Optional.empty();
+                }
+            }
+            CourseUser courseUser = courseUserService.save(new CourseUser(userBD.getId(), course.getId()));
 
             course.addCourseUser(courseUser);
             courseRepository.save(course);
@@ -62,11 +72,18 @@ public class CourseServiceImpl implements CourseService{
     public Optional<User> createUser(User user, Long idCourse) {
         Optional<Course> optional = courseRepository.findById(idCourse);
         if (optional.isPresent()) {
+            User userDetail = userClientRest.detail(user.getId());
+            Course course = optional.get();
+
+            if (userDetail != null)
+                return assignUser(userDetail, course.getId());
+
             User userBD = userClientRest.create(user);
 
-            Course course = optional.get();
-            CourseUser courseUser = new CourseUser();
+            CourseUser courseUser = courseUserService.save(new CourseUser(course.getId(), userBD.getId()));
+            /*CourseUser courseUser = new CourseUser();
             courseUser.setIdUser(userBD.getId());
+            courseUser.setIdCourse(course.getId());*/
 
             course.addCourseUser(courseUser);
             courseRepository.save(course);
@@ -82,13 +99,41 @@ public class CourseServiceImpl implements CourseService{
             User userBD = userClientRest.detail(user.getId());
 
             Course course = optional.get();
-            CourseUser courseUser = new CourseUser();
+            List<CourseUser> list = course.getCourseUserList();
+            list.forEach(value -> {
+                if (Objects.equals(value.getIdCourse(), course.getId()) && value.getIdUser() == userBD.getId()) {
+                    courseUserService.delete(value.getId());
+                    course.removeCourseUser(value);
+                }
+            });
+            /*CourseUser courseUser = new CourseUser();
             courseUser.setIdUser(userBD.getId());
 
-            course.removeCourseUser(courseUser);
+            course.removeCourseUser(courseUser);*/
             courseRepository.save(course);
             return Optional.of(userBD);
         }
         return Optional.empty();
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Course> usersById(Long id) {
+        Optional<Course> optional = courseRepository.findById(id);
+        if(optional.isPresent()){
+            Course course = optional.get();
+            if(!course.getCourseUserList().isEmpty()){
+                List<Long> ids = course.getCourseUserList().stream().map(CourseUser::getIdUser)
+                        .collect(Collectors.toList());
+                List<User> userList = userClientRest.usersByCourse(ids);
+                course.setUserList(userList);
+            }
+            return Optional.of(course);
+        }
+        return Optional.empty();
+    }
+    @Override
+    @Transactional
+    public void deleteCourseUserById(Long id) {
+        courseRepository.deleteCourseUserById(id);
     }
 }

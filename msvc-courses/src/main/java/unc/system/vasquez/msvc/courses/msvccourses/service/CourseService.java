@@ -16,4 +16,6 @@ public interface CourseService {
     Optional<User> assignUser(User user, Long idCourse);
     Optional<User> createUser(User user, Long idCourse);
     Optional<User> removeUser(User user, Long idCourse);
+    Optional<Course> usersById(Long id);
+    void deleteCourseUserById(Long id);
 }
